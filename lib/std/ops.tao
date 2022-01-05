@@ -1,3 +1,14 @@
+# Neg
+
+class Neg =
+    => neg : Self -> Self
+
+member Int of Neg =
+    => neg = fn x => -x
+
+member Num of Neg =
+    => neg = fn x => -x
+
 # Add
 
 class Add =
