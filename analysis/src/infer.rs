@@ -46,7 +46,7 @@ pub enum InferError {
     NoSuchField(TyVar, Span, SrcNode<Ident>),
     InvalidUnaryOp(SrcNode<ast::UnaryOp>, TyVar),
     InvalidBinaryOp(SrcNode<ast::BinaryOp>, TyVar, TyVar),
-    TypeDoesNotFulfil(ClassId, TyVar, Span, Option<Span>),
+    TypeDoesNotFulfill(ClassId, TyVar, Span, Option<Span>),
     RecursiveAlias(AliasId, TyVar, Span),
     PatternNotSupported(TyVar, SrcNode<ast::BinaryOp>, TyVar, Span),
     AmbiguousClassItem(SrcNode<Ident>, Vec<ClassId>),
@@ -333,7 +333,19 @@ impl<'a> Infer<'a> {
             },
             (TyInfo::Error(_), _) => self.make_eq_inner(y, x),
 
-            (TyInfo::Prim(x), TyInfo::Prim(y)) if x == y => Ok(()),
+            (TyInfo::Prim(xp), TyInfo::Prim(yp)) => match (xp, yp) {
+                (_, _) if xp == yp => Ok(()),
+                // `Nat`s will automatically be coerced to `Int`s when they resolve with each other.
+                (Prim::Nat, Prim::Int) => {
+                    self.set_info(x, TyInfo::Prim(Prim::Int));
+                    Ok(())
+                }
+                (Prim::Int, Prim::Nat) => {
+                    self.set_info(y, TyInfo::Prim(Prim::Int));
+                    Ok(())
+                }
+                (_, _) => Err((x, y)),
+            },
             (TyInfo::List(x), TyInfo::List(y)) => self.make_eq_inner(x, y),
             (TyInfo::Tuple(xs), TyInfo::Tuple(ys)) if xs.len() == ys.len() => make_eq_many(self, xs, ys),
             (TyInfo::Record(xs), TyInfo::Record(ys)) if xs.len() == ys.len() && xs
@@ -448,10 +460,10 @@ impl<'a> Infer<'a> {
             Constraint::Unary(op, a, output) => match (&*op, self.follow_info(a)) {
                 (_, TyInfo::Error(reason)) => Some(Ok(TyInfo::Error(reason))),
                 (_, TyInfo::Unknown(_)) => None,
-                (Neg, TyInfo::Prim(Prim::Num)) => Some(Ok(TyInfo::Prim(Prim::Num))),
+                (Not, TyInfo::Prim(Prim::Bool)) => Some(Ok(TyInfo::Prim(Prim::Bool))),
                 (Neg, TyInfo::Prim(Prim::Nat)) => Some(Ok(TyInfo::Prim(Prim::Int))),
                 (Neg, TyInfo::Prim(Prim::Int)) => Some(Ok(TyInfo::Prim(Prim::Int))),
-                (Not, TyInfo::Prim(Prim::Bool)) => Some(Ok(TyInfo::Prim(Prim::Bool))),
+                (Neg, TyInfo::Prim(Prim::Num)) => Some(Ok(TyInfo::Prim(Prim::Num))),
                 _ => {
                     self.set_error(output);
                     Some(Err(InferError::InvalidUnaryOp(op.clone(), a)))
@@ -476,18 +488,18 @@ impl<'a> Infer<'a> {
                     lazy_static::lazy_static! {
                         static ref PRIM_BINARY_IMPLS: HashMap<(ast::BinaryOp, ty::Prim, ty::Prim), ty::Prim> = [
                             // Bool
-                            ((Eq, Bool, Bool), Bool),
-                            ((NotEq, Bool, Bool), Bool),
                             ((And, Bool, Bool), Bool),
                             ((Or, Bool, Bool), Bool),
                             ((Xor, Bool, Bool), Bool),
+                            ((Eq, Bool, Bool), Bool),
+                            ((NotEq, Bool, Bool), Bool),
 
                             // Nat
                             ((Add, Nat, Nat), Nat),
                             ((Sub, Nat, Nat), Int),
                             ((Mul, Nat, Nat), Nat),
-                            ((Rem, Nat, Nat), Nat),
                             ((Div, Nat, Nat), Num),
+                            ((Rem, Nat, Nat), Nat),
                             ((Eq, Nat, Nat), Bool),
                             ((NotEq, Nat, Nat), Bool),
                             ((Less, Nat, Nat), Bool),
@@ -506,6 +518,30 @@ impl<'a> Infer<'a> {
                             ((LessEq, Int, Int), Bool),
                             ((More, Int, Int), Bool),
                             ((MoreEq, Int, Int), Bool),
+
+                            // Int / Nat
+                            ((Add, Int, Nat), Int),
+                            ((Sub, Int, Nat), Int),
+                            ((Mul, Int, Nat), Int),
+                            ((Div, Int, Nat), Num),
+                            ((Eq, Int, Nat), Bool),
+                            ((NotEq, Int, Nat), Bool),
+                            ((Less, Int, Nat), Bool),
+                            ((LessEq, Int, Nat), Bool),
+                            ((More, Int, Nat), Bool),
+                            ((MoreEq, Int, Nat), Bool),
+
+                            // Num
+                            ((Add, Num, Num), Num),
+                            ((Sub, Num, Num), Num),
+                            ((Mul, Num, Num), Num),
+                            ((Div, Num, Num), Num),
+                            ((Eq, Num, Num), Bool),
+                            ((NotEq, Num, Num), Bool),
+                            ((Less, Num, Num), Bool),
+                            ((LessEq, Num, Num), Bool),
+                            ((More, Num, Num), Bool),
+                            ((MoreEq, Num, Num), Bool),
 
                             // Char
                             ((Eq, Char, Char), Bool),
@@ -637,7 +673,7 @@ impl<'a> Infer<'a> {
                 {
                     Some(Ok(()))
                 } else {
-                    Some(Err(InferError::TypeDoesNotFulfil(
+                    Some(Err(InferError::TypeDoesNotFulfill(
                         obligation,
                         ty,
                         span,
@@ -696,7 +732,7 @@ impl<'a> Infer<'a> {
 
                     Some(Ok(()))
                 } else {
-                    Some(Err(InferError::TypeDoesNotFulfil(
+                    Some(Err(InferError::TypeDoesNotFulfill(
                         obligation,
                         ty,
                         span,
@@ -755,7 +791,7 @@ impl<'a> Infer<'a> {
                 InferError::NoSuchField(a, record_span, field) => Error::NoSuchField(checked.reify(a), record_span, field),
                 InferError::InvalidUnaryOp(op, a) => Error::InvalidUnaryOp(op, checked.reify(a), checked.infer.span(a)),
                 InferError::InvalidBinaryOp(op, a, b) => Error::InvalidBinaryOp(op, checked.reify(a), checked.infer.span(a), checked.reify(b), checked.infer.span(b)),
-                InferError::TypeDoesNotFulfil(class, ty, span, gen_span) => Error::TypeDoesNotFulfil(class, checked.reify(ty), span, gen_span),
+                InferError::TypeDoesNotFulfill(class, ty, span, gen_span) => Error::TypeDoesNotFulfil(class, checked.reify(ty), span, gen_span),
                 InferError::RecursiveAlias(alias, a, span) => Error::RecursiveAlias(alias, checked.reify(a), span),
                 InferError::PatternNotSupported(lhs, op, rhs, span) => Error::PatternNotSupported(checked.reify(lhs), op, checked.reify(rhs), span),
                 InferError::AmbiguousClassItem(field, candidate_classes) => Error::AmbiguousClassItem(field, candidate_classes),

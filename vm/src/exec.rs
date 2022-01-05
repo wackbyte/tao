@@ -158,6 +158,16 @@ pub fn exec(prog: &Program) -> Option<Value> {
                 let x = stack.pop().unwrap().bool();
                 stack.push(Value::Bool(!x))
             },
+            Instr::AndBool => {
+                let y = stack.pop().unwrap().bool();
+                let x = stack.pop().unwrap().bool();
+                stack.push(Value::Bool(x && y))
+            },
+            Instr::EqBool => {
+                let y = stack.pop().unwrap().bool();
+                let x = stack.pop().unwrap().bool();
+                stack.push(Value::Bool(x == y))
+            },
             Instr::NegInt => {
                 let x = stack.pop().unwrap().int();
                 stack.push(Value::Int(-x))
@@ -177,19 +187,19 @@ pub fn exec(prog: &Program) -> Option<Value> {
                 let x = stack.pop().unwrap().int();
                 stack.push(Value::Int(x * y))
             },
+            Instr::DivInt => {
+                let y = stack.pop().unwrap().int();
+                let x = stack.pop().unwrap().int();
+                stack.push(Value::Num(x as f64 / y as f64))
+            },
+            Instr::RemInt => {
+                let y = stack.pop().unwrap().int();
+                let x = stack.pop().unwrap().int();
+                stack.push(Value::Int(x % y))
+            },
             Instr::EqInt => {
                 let y = stack.pop().unwrap().int();
                 let x = stack.pop().unwrap().int();
-                stack.push(Value::Bool(x == y))
-            },
-            Instr::EqBool => {
-                let y = stack.pop().unwrap().bool();
-                let x = stack.pop().unwrap().bool();
-                stack.push(Value::Bool(x == y))
-            },
-            Instr::EqChar => {
-                let y = stack.pop().unwrap().char();
-                let x = stack.pop().unwrap().char();
                 stack.push(Value::Bool(x == y))
             },
             Instr::LessInt => {
@@ -212,10 +222,59 @@ pub fn exec(prog: &Program) -> Option<Value> {
                 let x = stack.pop().unwrap().int();
                 stack.push(Value::Bool(x >= y))
             },
-            Instr::AndBool => {
-                let y = stack.pop().unwrap().bool();
-                let x = stack.pop().unwrap().bool();
-                stack.push(Value::Bool(x && y))
+            Instr::NegNum => {
+                let x = stack.pop().unwrap().num();
+                stack.push(Value::Num(-x))
+            },
+            Instr::AddNum => {
+                let y = stack.pop().unwrap().num();
+                let x = stack.pop().unwrap().num();
+                stack.push(Value::Num(x + y))
+            },
+            Instr::SubNum => {
+                let y = stack.pop().unwrap().num();
+                let x = stack.pop().unwrap().num();
+                stack.push(Value::Num(x - y))
+            },
+            Instr::MulNum => {
+                let y = stack.pop().unwrap().num();
+                let x = stack.pop().unwrap().num();
+                stack.push(Value::Num(x * y))
+            },
+            Instr::DivNum => {
+                let y = stack.pop().unwrap().num();
+                let x = stack.pop().unwrap().num();
+                stack.push(Value::Num(x / y))
+            },
+            Instr::EqNum => {
+                let y = stack.pop().unwrap().num();
+                let x = stack.pop().unwrap().num();
+                stack.push(Value::Bool(x == y))
+            },
+            Instr::LessNum => {
+                let y = stack.pop().unwrap().num();
+                let x = stack.pop().unwrap().num();
+                stack.push(Value::Bool(x < y))
+            },
+            Instr::MoreNum => {
+                let y = stack.pop().unwrap().num();
+                let x = stack.pop().unwrap().num();
+                stack.push(Value::Bool(x > y))
+            },
+            Instr::LessEqNum => {
+                let y = stack.pop().unwrap().num();
+                let x = stack.pop().unwrap().num();
+                stack.push(Value::Bool(x <= y))
+            },
+            Instr::MoreEqNum => {
+                let y = stack.pop().unwrap().num();
+                let x = stack.pop().unwrap().num();
+                stack.push(Value::Bool(x >= y))
+            },
+            Instr::EqChar => {
+                let y = stack.pop().unwrap().char();
+                let x = stack.pop().unwrap().char();
+                stack.push(Value::Bool(x == y))
             },
         }
 

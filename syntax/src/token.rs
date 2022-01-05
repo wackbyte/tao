@@ -153,7 +153,7 @@ pub fn lexer() -> impl Parser<char, Vec<(Token, Span)>, Error = Error> {
         .map(|s: String| Token::Nat(s.parse().unwrap()));
 
     let num = text::int(10)
-        .then_ignore(just('.'))
+        .then(just('.'))
         .chain::<char, _, _>(text::digits(10))
         .collect::<String>()
         .map(Intern::new)

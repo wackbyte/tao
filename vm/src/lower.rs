@@ -224,20 +224,36 @@ impl Program {
                     AddNat | AddInt => { self.push(Instr::AddInt); },
                     SubNat | SubInt => { self.push(Instr::SubInt); },
                     MulNat | MulInt => { self.push(Instr::MulInt); },
+                    DivNat | DivInt => { self.push(Instr::DivInt); },
+                    RemNat => { self.push(Instr::RemInt); },
                     EqNat | EqInt => { self.push(Instr::EqInt); },
-                    EqChar => { self.push(Instr::EqChar); },
                     NotEqNat | NotEqInt => {
                         self.push(Instr::EqInt);
-                        self.push(Instr::NotBool);
-                    },
-                    NotEqChar => {
-                        self.push(Instr::EqChar);
                         self.push(Instr::NotBool);
                     },
                     LessNat | LessInt => { self.push(Instr::LessInt); },
                     MoreNat | MoreInt => { self.push(Instr::MoreInt); },
                     LessEqNat | LessEqInt => { self.push(Instr::LessEqInt); },
                     MoreEqNat | MoreEqInt => { self.push(Instr::MoreEqInt); },
+                    NegNum => { self.push(Instr::NegNum); },
+                    AddNum => { self.push(Instr::AddNum); },
+                    SubNum => { self.push(Instr::SubNum); },
+                    MulNum => { self.push(Instr::MulNum); },
+                    DivNum => { self.push(Instr::DivNum); },
+                    EqNum => { self.push(Instr::EqNum); },
+                    NotEqNum => {
+                        self.push(Instr::EqNum);
+                        self.push(Instr::NotBool);
+                    },
+                    LessNum => { self.push(Instr::LessNum); },
+                    MoreNum => { self.push(Instr::MoreNum); },
+                    LessEqNum => { self.push(Instr::LessEqNum); },
+                    MoreEqNum => { self.push(Instr::MoreEqNum); },
+                    EqChar => { self.push(Instr::EqChar); },
+                    NotEqChar => {
+                        self.push(Instr::EqChar);
+                        self.push(Instr::NotBool);
+                    },
                     Join(_) => { self.push(Instr::JoinList); },
                 };
             },

@@ -5,8 +5,17 @@ class Default =
 
 def default A < Default : A = A.default
 
+member Bool of Default =
+    => default = False
+
 member Nat of Default =
     => default = Nat.zero
+
+member Int of Default =
+    => default = Int.zero
+
+member Num of Default =
+    => default = Num.zero
 
 for A < Default, B < Default member (A, B) of Default =
     => default = (A.default, B.default)

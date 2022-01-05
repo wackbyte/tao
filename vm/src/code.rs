@@ -34,21 +34,33 @@ pub enum Instr {
     GetLocal(usize), // Duplicate value in locals position (len - 1 - N) and put on stack
 
     NotBool, // Bool -> Bool
-    NegInt, // Int -> Int
+    AndBool, // Bool -> Bool -> Bool
+    EqBool, // Bool -> Bool -> Bool
 
+    NegInt, // Int -> Int
     AddInt, // Int -> Int -> Int
     SubInt, // Int -> Int -> Int
-    MulInt,
-
+    MulInt, // Int -> Int -> Int
+    DivInt, // Int -> Int -> Num
+    RemInt, // Int -> Int -> Int
     EqInt, // Int -> Int -> Bool
-    EqBool, // Bool -> Bool -> Bool
-    EqChar, // Char -> Char -> Bool
-    LessInt,
-    MoreInt,
-    LessEqInt,
-    MoreEqInt,
+    LessInt, // Int -> Int -> Bool
+    MoreInt, // Int -> Int -> Bool
+    LessEqInt, // Int -> Int -> Bool
+    MoreEqInt, // Int -> Int -> Bool
 
-    AndBool, // Bool -> Bool -> Bool
+    NegNum, // Num -> Num
+    AddNum, // Num -> Num -> Num
+    SubNum, // Num -> Num -> Num
+    MulNum, // Num -> Num -> Num
+    DivNum, // Num -> Num -> Num
+    EqNum, // Num -> Num -> Bool
+    LessNum, // Num -> Num -> Bool
+    MoreNum, // Num -> Num -> Bool
+    LessEqNum, // Num -> Num -> Bool
+    MoreEqNum, // Num -> Num -> Bool
+
+    EqChar, // Char -> Char -> Bool
 }
 
 impl Instr {
@@ -130,18 +142,30 @@ impl Program {
                 Instr::PopLocal(_) => 0,
                 Instr::GetLocal(_) => 1,
                 Instr::NotBool
-                | Instr::NegInt => 0,
-                Instr::AddInt
+                | Instr::NegInt
+                | Instr::NegNum => 0,
+                Instr::EqBool
+                | Instr::AndBool
+                | Instr::AddInt
                 | Instr::SubInt
                 | Instr::MulInt
+                | Instr::DivInt
+                | Instr::RemInt
                 | Instr::EqInt
-                | Instr::EqBool
-                | Instr::EqChar
                 | Instr::LessInt
                 | Instr::MoreInt
                 | Instr::LessEqInt
                 | Instr::MoreEqInt
-                | Instr::AndBool => -1,
+                | Instr::AddNum
+                | Instr::SubNum
+                | Instr::MulNum
+                | Instr::DivNum
+                | Instr::EqNum
+                | Instr::LessNum
+                | Instr::MoreNum
+                | Instr::LessEqNum
+                | Instr::MoreEqNum
+                | Instr::EqChar => -1,
             };
 
             let instr_display = match instr {
@@ -170,18 +194,30 @@ impl Program {
                 Instr::PopLocal(n) => format!("local.pop {}", n),
                 Instr::GetLocal(x) => format!("local.get +{}", x),
                 Instr::NotBool => format!("bool.not"),
+                Instr::AndBool => format!("bool.and"),
+                Instr::EqBool => format!("bool.eq"),
                 Instr::NegInt => format!("int.neg"),
                 Instr::AddInt => format!("int.add"),
                 Instr::SubInt => format!("int.sub"),
                 Instr::MulInt => format!("int.mul"),
+                Instr::DivInt => format!("int.div"),
+                Instr::RemInt => format!("int.rem"),
                 Instr::EqInt => format!("int.eq"),
-                Instr::EqBool => format!("bool.eq"),
-                Instr::EqChar => format!("char.eq"),
                 Instr::LessInt => format!("int.less"),
                 Instr::MoreInt => format!("int.more"),
                 Instr::LessEqInt => format!("int.less_eq"),
                 Instr::MoreEqInt => format!("int.more_eq"),
-                Instr::AndBool => format!("bool.and"),
+                Instr::NegNum => format!("num.neg"),
+                Instr::AddNum => format!("num.add"),
+                Instr::SubNum => format!("num.sub"),
+                Instr::MulNum => format!("num.mul"),
+                Instr::DivNum => format!("num.div"),
+                Instr::EqNum => format!("num.eq"),
+                Instr::LessNum => format!("num.less"),
+                Instr::MoreNum => format!("num.more"),
+                Instr::LessEqNum => format!("num.less_eq"),
+                Instr::MoreEqNum => format!("num.more_eq"),
+                Instr::EqChar => format!("char.eq"),
             };
 
             writeln!(writer, "0x{:03X} | {:>+3} | {}", addr.0, stack_diff, instr_display).unwrap();

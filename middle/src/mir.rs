@@ -25,38 +25,60 @@ pub enum Const {
 }
 
 impl Const {
+    pub fn bool(&self) -> bool { if let Const::Bool(x) = self { *x } else { panic!("{:?}", self) } }
     pub fn nat(&self) -> u64 { if let Const::Nat(x) = self { *x } else { panic!("{:?}", self) } }
     pub fn int(&self) -> i64 { if let Const::Int(x) = self { *x } else { panic!("{:?}", self) } }
-    pub fn bool(&self) -> bool { if let Const::Bool(x) = self { *x } else { panic!("{:?}", self) } }
+    pub fn num(&self) -> f64 { if let Const::Num(x) = self { *x } else { panic!("{:?}", self) } }
+    pub fn char(&self) -> char { if let Const::Char(c) = self { *c } else { panic!("{:?}", self) } }
     pub fn list(&self) -> Vec<Self> { if let Const::List(x) = self { x.clone() } else { panic!("{:?}", self) } }
 }
 
 #[derive(Clone, Debug)]
 pub enum Intrinsic {
     MakeList(Repr),
+
     NotBool,
+
     NegNat,
-    NegInt,
     AddNat,
-    AddInt,
     SubNat,
-    SubInt,
     MulNat,
-    MulInt,
+    DivNat,
+    RemNat,
     EqNat,
-    EqInt,
-    EqChar,
     NotEqNat,
-    NotEqInt,
-    NotEqChar,
     LessNat,
-    LessInt,
     MoreNat,
-    MoreInt,
     LessEqNat,
-    LessEqInt,
     MoreEqNat,
+
+    NegInt,
+    AddInt,
+    SubInt,
+    MulInt,
+    DivInt,
+    EqInt,
+    NotEqInt,
+    LessInt,
+    MoreInt,
+    LessEqInt,
     MoreEqInt,
+
+    NegNum,
+    AddNum,
+    SubNum,
+    MulNum,
+    DivNum,
+    EqNum,
+    NotEqNum,
+    LessNum,
+    MoreNum,
+    LessEqNum,
+    MoreEqNum,
+
+    EqChar,
+    NotEqChar,
+
     Join(Repr),
 }
 
@@ -280,15 +302,17 @@ impl Expr {
                     Expr::Tuple(fields) => write!(f, "({})", fields.iter().map(|f| format!("{},", DisplayExpr(f, self.1 + 1))).collect::<Vec<_>>().join(" ")),
                     Expr::List(items) => write!(f, "[{}]", items.iter().map(|i| format!("{},", DisplayExpr(i, self.1 + 1))).collect::<Vec<_>>().join(" ")),
                     Expr::Intrinsic(NotBool, args) => write!(f, "!{}", DisplayExpr(&args[0], self.1)),
-                    Expr::Intrinsic(NegNat | NegInt, args) => write!(f, "-{}", DisplayExpr(&args[0], self.1)),
-                    Expr::Intrinsic(EqChar | EqNat | EqInt, args) => write!(f, "{} = {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(AddNat | AddInt, args) => write!(f, "{} + {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(SubNat | SubInt, args) => write!(f, "{} - {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(MulNat | MulInt, args) => write!(f, "{} * {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(LessNat, args) => write!(f, "{} < {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(MoreNat, args) => write!(f, "{} > {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(MoreEqNat, args) => write!(f, "{} >= {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(LessEqNat, args) => write!(f, "{} <= {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(NegNat | NegInt | NegNum, args) => write!(f, "-{}", DisplayExpr(&args[0], self.1)),
+                    Expr::Intrinsic(AddNat | AddInt | AddNum, args) => write!(f, "{} + {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(SubNat | SubInt | SubNum, args) => write!(f, "{} - {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(MulNat | MulInt | MulNum, args) => write!(f, "{} * {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(DivNat | DivInt | DivNum, args) => write!(f, "{} / {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(RemNat, args) => write!(f, "{} % {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(EqNat | EqInt | EqNum | EqChar, args) => write!(f, "{} = {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(LessNat | LessInt | LessNum, args) => write!(f, "{} < {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(MoreNat | MoreInt | MoreNum, args) => write!(f, "{} > {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(MoreEqNat | MoreEqInt | MoreEqNum, args) => write!(f, "{} >= {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(LessEqNat | LessEqInt | LessEqNum, args) => write!(f, "{} <= {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
                     Expr::Intrinsic(Join(_), args) => write!(f, "{} ++ {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
                     Expr::Match(pred, arms) => {
                         write!(f, "match {} in", DisplayExpr(pred, self.1))?;

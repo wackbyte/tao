@@ -4,8 +4,20 @@ class Zero =
 member Nat of Zero =
     => zero = 0
 
+member Int of Zero =
+    => zero = 0
+
+member Num of Zero =
+    => zero = 0.0
+
 class One =
     => one : Self
 
-member Nat of Zero =
-    => zero = 1
+member Nat of One =
+    => one = 1
+
+member Int of One =
+    => one = 1
+
+member Num of One =
+    => one = 1.0

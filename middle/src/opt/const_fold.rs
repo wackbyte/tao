@@ -46,6 +46,9 @@ impl Pass for ConstFold {
 
                         let res = match op {
                             Intrinsic::NotBool => Const::Bool(!x.bool()),
+                            Intrinsic::NegNat => Const::Int(-(x.nat() as i64)),
+                            Intrinsic::NegInt => Const::Int(-x.int()),
+                            Intrinsic::NegNum => Const::Num(-x.num()),
                             _ => return,
                         };
                         *expr = Expr::Const(res);
@@ -58,13 +61,48 @@ impl Pass for ConstFold {
 
                         let res = match op {
                             Intrinsic::AddNat => Const::Nat(x.nat() + y.nat()),
-                            Intrinsic::AddInt => Const::Int(x.int() + y.int()),
                             Intrinsic::SubNat => Const::Int(x.nat() as i64 - y.nat() as i64),
+                            Intrinsic::MulNat => Const::Nat(x.nat() * y.nat()),
+                            Intrinsic::DivNat => Const::Num(x.nat() as f64 / y.nat() as f64),
+                            Intrinsic::RemNat => Const::Nat(x.nat() % y.nat()),
+                            Intrinsic::EqNat => Const::Bool(x.nat() == y.nat()),
+                            Intrinsic::NotEqNat => Const::Bool(x.nat() != y.nat()),
+                            Intrinsic::LessNat => Const::Bool(x.nat() > y.nat()),
+                            Intrinsic::MoreNat => Const::Bool(x.nat() < y.nat()),
+                            Intrinsic::LessEqNat => Const::Bool(x.nat() <= y.nat()),
+                            Intrinsic::MoreEqNat => Const::Bool(x.nat() >= y.nat()),
+
+                            Intrinsic::AddInt => Const::Int(x.int() + y.int()),
+                            Intrinsic::SubInt => Const::Int(x.int() - y.int()),
+                            Intrinsic::MulInt => Const::Int(x.int() * y.int()),
+                            Intrinsic::DivInt => Const::Num(x.int() as f64 / y.int() as f64),
+                            Intrinsic::EqInt => Const::Bool(x.int() == y.int()),
+                            Intrinsic::NotEqInt => Const::Bool(x.int() != y.int()),
+                            Intrinsic::LessInt => Const::Bool(x.int() > y.int()),
+                            Intrinsic::MoreInt => Const::Bool(x.int() < y.int()),
+                            Intrinsic::LessEqInt => Const::Bool(x.int() <= y.int()),
+                            Intrinsic::MoreEqInt => Const::Bool(x.int() >= y.int()),
+
+                            Intrinsic::AddNum => Const::Num(x.num() + y.num()),
+                            Intrinsic::SubNum => Const::Num(x.num() - y.num()),
+                            Intrinsic::MulNum => Const::Num(x.num() * y.num()),
+                            Intrinsic::DivNum => Const::Num(x.num() as f64 / y.num() as f64),
+                            Intrinsic::EqNum => Const::Bool(x.num() == y.num()),
+                            Intrinsic::NotEqNum => Const::Bool(x.num() != y.num()),
+                            Intrinsic::LessNum => Const::Bool(x.num() > y.num()),
+                            Intrinsic::MoreNum => Const::Bool(x.num() < y.num()),
+                            Intrinsic::LessEqNum => Const::Bool(x.num() <= y.num()),
+                            Intrinsic::MoreEqNum => Const::Bool(x.num() >= y.num()),
+    
+                            Intrinsic::EqChar => Const::Bool(x.char() == y.char()),
+                            Intrinsic::NotEqChar => Const::Bool(x.char() != y.char()),
+
                             Intrinsic::Join(_) => Const::List({
                                 let mut xs = x.list();
                                 xs.append(&mut y.list());
                                 xs
                             }),
+
                             // _ => return,
                             op => todo!("{:?}", op),
                         };

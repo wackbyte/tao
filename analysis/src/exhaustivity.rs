@@ -87,6 +87,26 @@ impl AbstractPat {
 
         match ctx.tys.get(ty) {
             Ty::Error(_) => None,
+            Ty::Prim(Prim::Bool) => {
+                let (mut caught_f, mut caught_t) = (false, false);
+                for pat in filter {
+                    match pat {
+                        AbstractPat::Wildcard => return None,
+                        AbstractPat::Bool([f, t]) => {
+                            caught_f |= f;
+                            caught_t |= t;
+                        },
+                        _ => return None, // Type mismatch, don't yield an error because one was already generated
+                    }
+                }
+                if !caught_f {
+                    Some(ExamplePat::Prim(ExamplePrim::Bool(false)))
+                } else if !caught_t {
+                    Some(ExamplePat::Prim(ExamplePrim::Bool(true)))
+                } else {
+                    None
+                }
+            },
             Ty::Prim(Prim::Nat) => {
                 let mut covered = Ranges::new();
                 for pat in filter {
@@ -109,26 +129,9 @@ impl AbstractPat {
                 }
                 covered.clone().invert().into_iter().next().map(ExamplePrim::Int).map(ExamplePat::Prim)
             },
-            Ty::Prim(Prim::Bool) => {
-                let (mut caught_f, mut caught_t) = (false, false);
-                for pat in filter {
-                    match pat {
-                        AbstractPat::Wildcard => return None,
-                        AbstractPat::Bool([f, t]) => {
-                            caught_f |= f;
-                            caught_t |= t;
-                        },
-                        _ => return None, // Type mismatch, don't yield an error because one was already generated
-                    }
-                }
-                if !caught_f {
-                    Some(ExamplePat::Prim(ExamplePrim::Bool(false)))
-                } else if !caught_t {
-                    Some(ExamplePat::Prim(ExamplePrim::Bool(true)))
-                } else {
-                    None
-                }
-            },
+            Ty::Prim(Prim::Num) => {
+                None // Floating point values shouldn't be matched on
+            }
             Ty::Prim(Prim::Char) => {
                 for pat in filter {
                     match pat {

@@ -2,10 +2,11 @@ use super::*;
 
 fn prim_to_mir(prim: ty::Prim) -> repr::Prim {
     match prim {
+        ty::Prim::Bool => repr::Prim::Bool,
         ty::Prim::Nat => repr::Prim::Nat,
         ty::Prim::Int => repr::Prim::Int,
+        ty::Prim::Num => repr::Prim::Num,
         ty::Prim::Char => repr::Prim::Char,
-        ty::Prim::Bool => repr::Prim::Bool,
         p => todo!("{:?}", p),
     }
 }
@@ -34,11 +35,11 @@ impl Context {
 
     pub fn lower_litr(&mut self, hir: &HirContext, con: &ConContext, litr: &hir::Literal) -> Const {
         match litr {
-            hir::Literal::Nat(x) => mir::Const::Nat(*x),
-            hir::Literal::Str(s) => mir::Const::Str(*s),
             hir::Literal::Bool(x) => mir::Const::Bool(*x),
+            hir::Literal::Nat(x) => mir::Const::Nat(*x),
             hir::Literal::Num(x) => mir::Const::Num(*x),
             hir::Literal::Char(c) => mir::Const::Char(*c),
+            hir::Literal::Str(s) => mir::Const::Str(*s),
         }
     }
 
@@ -152,6 +153,7 @@ impl Context {
                     (Not, Prim(Bool)) => mir::Intrinsic::NotBool,
                     (Neg, Prim(Nat)) => mir::Intrinsic::NegNat,
                     (Neg, Prim(Int)) => mir::Intrinsic::NegInt,
+                    (Neg, Prim(Num)) => mir::Intrinsic::NegNum,
                     op => panic!("Invalid unary op in HIR: {:?}", op),
                 };
                 mir::Expr::Intrinsic(intrinsic, vec![self.lower_expr(hir, con, x)])
@@ -162,25 +164,53 @@ impl Context {
                 use ConTy::{Prim, List};
                 let intrinsic = match (**op, con.get_ty(*x.meta()), con.get_ty(*y.meta())) {
                     (Add, Prim(Nat), Prim(Nat)) => mir::Intrinsic::AddNat,
-                    (Add, Prim(Int), Prim(Int)) => mir::Intrinsic::AddInt,
                     (Sub, Prim(Nat), Prim(Nat)) => mir::Intrinsic::SubNat,
-                    (Sub, Prim(Int), Prim(Int)) => mir::Intrinsic::SubInt,
                     (Mul, Prim(Nat), Prim(Nat)) => mir::Intrinsic::MulNat,
-                    (Mul, Prim(Int), Prim(Int)) => mir::Intrinsic::MulInt,
+                    (Div, Prim(Nat), Prim(Nat)) => mir::Intrinsic::DivNat,
+                    (Rem, Prim(Nat), Prim(Nat)) => mir::Intrinsic::RemNat,
                     (Eq, Prim(Nat), Prim(Nat)) => mir::Intrinsic::EqNat,
-                    (Eq, Prim(Int), Prim(Int)) => mir::Intrinsic::EqInt,
                     (NotEq, Prim(Nat), Prim(Nat)) => mir::Intrinsic::NotEqNat,
-                    (NotEq, Prim(Int), Prim(Int)) => mir::Intrinsic::NotEqInt,
                     (Less, Prim(Nat), Prim(Nat)) => mir::Intrinsic::LessNat,
-                    (Less, Prim(Int), Prim(Int)) => mir::Intrinsic::LessInt,
                     (More, Prim(Nat), Prim(Nat)) => mir::Intrinsic::MoreNat,
-                    (More, Prim(Int), Prim(Int)) => mir::Intrinsic::MoreInt,
                     (LessEq, Prim(Nat), Prim(Nat)) => mir::Intrinsic::LessEqNat,
-                    (LessEq, Prim(Int), Prim(Int)) => mir::Intrinsic::LessEqInt,
                     (MoreEq, Prim(Nat), Prim(Nat)) => mir::Intrinsic::MoreEqNat,
+
+                    (Add, Prim(Int), Prim(Int)) => mir::Intrinsic::AddInt,
+                    (Sub, Prim(Int), Prim(Int)) => mir::Intrinsic::SubInt,
+                    (Mul, Prim(Int), Prim(Int)) => mir::Intrinsic::MulInt,
+                    (Div, Prim(Int), Prim(Int)) => mir::Intrinsic::DivInt,
+                    (Eq, Prim(Int), Prim(Int)) => mir::Intrinsic::EqInt,
+                    (NotEq, Prim(Int), Prim(Int)) => mir::Intrinsic::NotEqInt,
+                    (Less, Prim(Int), Prim(Int)) => mir::Intrinsic::LessInt,
+                    (More, Prim(Int), Prim(Int)) => mir::Intrinsic::MoreInt,
+                    (LessEq, Prim(Int), Prim(Int)) => mir::Intrinsic::LessEqInt,
                     (MoreEq, Prim(Int), Prim(Int)) => mir::Intrinsic::MoreEqInt,
+
+                    (Add, Prim(Int), Prim(Nat)) => mir::Intrinsic::AddInt,
+                    (Sub, Prim(Int), Prim(Nat)) => mir::Intrinsic::SubInt,
+                    (Mul, Prim(Int), Prim(Nat)) => mir::Intrinsic::MulInt,
+                    (Div, Prim(Int), Prim(Nat)) => mir::Intrinsic::DivInt,
+                    (Eq, Prim(Int), Prim(Nat)) => mir::Intrinsic::EqInt,
+                    (NotEq, Prim(Int), Prim(Nat)) => mir::Intrinsic::NotEqInt,
+                    (Less, Prim(Int), Prim(Nat)) => mir::Intrinsic::LessInt,
+                    (More, Prim(Int), Prim(Nat)) => mir::Intrinsic::MoreInt,
+                    (LessEq, Prim(Int), Prim(Nat)) => mir::Intrinsic::LessEqInt,
+                    (MoreEq, Prim(Int), Prim(Nat)) => mir::Intrinsic::MoreEqInt,
+                    
+                    (Add, Prim(Num), Prim(Num)) => mir::Intrinsic::AddNum,
+                    (Sub, Prim(Num), Prim(Num)) => mir::Intrinsic::SubNum,
+                    (Mul, Prim(Num), Prim(Num)) => mir::Intrinsic::MulNum,
+                    (Div, Prim(Num), Prim(Num)) => mir::Intrinsic::DivNum,
+                    (Eq, Prim(Num), Prim(Num)) => mir::Intrinsic::EqNum,
+                    (NotEq, Prim(Num), Prim(Num)) => mir::Intrinsic::NotEqNum,
+                    (Less, Prim(Num), Prim(Num)) => mir::Intrinsic::LessNum,
+                    (More, Prim(Num), Prim(Num)) => mir::Intrinsic::MoreNum,
+                    (LessEq, Prim(Num), Prim(Num)) => mir::Intrinsic::LessEqNum,
+                    (MoreEq, Prim(Num), Prim(Num)) => mir::Intrinsic::MoreEqNum,
+
                     (Eq, Prim(Char), Prim(Char)) => mir::Intrinsic::EqChar,
                     (NotEq, Prim(Char), Prim(Char)) => mir::Intrinsic::NotEqChar,
+
                     (Join, List(x), List(y)) => mir::Intrinsic::Join(self.lower_ty(hir, con, *x)), // Assume x = y
                     op => panic!("Invalid binary op in HIR: {:?}", op),
                 };
