@@ -163,6 +163,12 @@ impl Context {
                 use ty::Prim::*;
                 use ConTy::{Prim, List};
                 let intrinsic = match (**op, con.get_ty(*x.meta()), con.get_ty(*y.meta())) {
+                    (And, Prim(Bool), Prim(Bool)) => mir::Intrinsic::AndBool,
+                    (Or, Prim(Bool), Prim(Bool)) => mir::Intrinsic::OrBool,
+                    (Xor, Prim(Bool), Prim(Bool)) => mir::Intrinsic::XorBool,
+                    (Eq, Prim(Bool), Prim(Bool)) => mir::Intrinsic::EqBool,
+                    (NotEq, Prim(Bool), Prim(Bool)) => mir::Intrinsic::NotEqBool,
+
                     (Add, Prim(Nat), Prim(Nat)) => mir::Intrinsic::AddNat,
                     (Sub, Prim(Nat), Prim(Nat)) => mir::Intrinsic::SubNat,
                     (Mul, Prim(Nat), Prim(Nat)) => mir::Intrinsic::MulNat,

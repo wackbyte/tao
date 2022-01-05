@@ -219,7 +219,17 @@ impl Program {
                 use mir::Intrinsic::*;
                 match intrinsic {
                     MakeList(_) => { self.push(Instr::MakeList(args.len())); },
+
                     NotBool => { self.push(Instr::NotBool); },
+                    AndBool => { self.push(Instr::AndBool); },
+                    OrBool => { self.push(Instr::OrBool); },
+                    XorBool => { self.push(Instr::XorBool); },
+                    EqBool => { self.push(Instr::EqBool); },
+                    NotEqBool => {
+                        self.push(Instr::EqBool);
+                        self.push(Instr::NotBool);
+                    },
+
                     NegNat | NegInt => { self.push(Instr::NegInt); },
                     AddNat | AddInt => { self.push(Instr::AddInt); },
                     SubNat | SubInt => { self.push(Instr::SubInt); },
@@ -235,6 +245,7 @@ impl Program {
                     MoreNat | MoreInt => { self.push(Instr::MoreInt); },
                     LessEqNat | LessEqInt => { self.push(Instr::LessEqInt); },
                     MoreEqNat | MoreEqInt => { self.push(Instr::MoreEqInt); },
+
                     NegNum => { self.push(Instr::NegNum); },
                     AddNum => { self.push(Instr::AddNum); },
                     SubNum => { self.push(Instr::SubNum); },
@@ -249,11 +260,13 @@ impl Program {
                     MoreNum => { self.push(Instr::MoreNum); },
                     LessEqNum => { self.push(Instr::LessEqNum); },
                     MoreEqNum => { self.push(Instr::MoreEqNum); },
+
                     EqChar => { self.push(Instr::EqChar); },
                     NotEqChar => {
                         self.push(Instr::EqChar);
                         self.push(Instr::NotBool);
                     },
+
                     Join(_) => { self.push(Instr::JoinList); },
                 };
             },

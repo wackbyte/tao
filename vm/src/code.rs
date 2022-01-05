@@ -35,6 +35,8 @@ pub enum Instr {
 
     NotBool, // Bool -> Bool
     AndBool, // Bool -> Bool -> Bool
+    OrBool, // Bool -> Bool -> Bool
+    XorBool, // Bool -> Bool -> Bool
     EqBool, // Bool -> Bool -> Bool
 
     NegInt, // Int -> Int
@@ -144,8 +146,10 @@ impl Program {
                 Instr::NotBool
                 | Instr::NegInt
                 | Instr::NegNum => 0,
-                Instr::EqBool
-                | Instr::AndBool
+                Instr::AndBool
+                | Instr::OrBool
+                | Instr::XorBool
+                | Instr::EqBool
                 | Instr::AddInt
                 | Instr::SubInt
                 | Instr::MulInt
@@ -193,9 +197,13 @@ impl Program {
                 Instr::PushLocal => format!("local.push"),
                 Instr::PopLocal(n) => format!("local.pop {}", n),
                 Instr::GetLocal(x) => format!("local.get +{}", x),
+
                 Instr::NotBool => format!("bool.not"),
                 Instr::AndBool => format!("bool.and"),
+                Instr::OrBool => format!("bool.or"),
+                Instr::XorBool => format!("bool.xor"),
                 Instr::EqBool => format!("bool.eq"),
+
                 Instr::NegInt => format!("int.neg"),
                 Instr::AddInt => format!("int.add"),
                 Instr::SubInt => format!("int.sub"),
@@ -207,6 +215,7 @@ impl Program {
                 Instr::MoreInt => format!("int.more"),
                 Instr::LessEqInt => format!("int.less_eq"),
                 Instr::MoreEqInt => format!("int.more_eq"),
+
                 Instr::NegNum => format!("num.neg"),
                 Instr::AddNum => format!("num.add"),
                 Instr::SubNum => format!("num.sub"),
@@ -217,6 +226,7 @@ impl Program {
                 Instr::MoreNum => format!("num.more"),
                 Instr::LessEqNum => format!("num.less_eq"),
                 Instr::MoreEqNum => format!("num.more_eq"),
+
                 Instr::EqChar => format!("char.eq"),
             };
 

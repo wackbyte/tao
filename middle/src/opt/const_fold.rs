@@ -60,6 +60,12 @@ impl Pass for ConstFold {
                         let y = if let Some(c) = &y { c } else { return };
 
                         let res = match op {
+                            Intrinsic::AndBool => Const::Bool(x.bool() & y.bool()),
+                            Intrinsic::OrBool => Const::Bool(x.bool() | y.bool()),
+                            Intrinsic::XorBool => Const::Bool(x.bool() ^ y.bool()),
+                            Intrinsic::EqBool => Const::Bool(x.bool() == y.bool()),
+                            Intrinsic::NotEqBool => Const::Bool(x.bool() != y.bool()),
+
                             Intrinsic::AddNat => Const::Nat(x.nat() + y.nat()),
                             Intrinsic::SubNat => Const::Int(x.nat() as i64 - y.nat() as i64),
                             Intrinsic::MulNat => Const::Nat(x.nat() * y.nat()),

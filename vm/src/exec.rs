@@ -154,6 +154,7 @@ pub fn exec(prog: &Program) -> Option<Value> {
             Instr::PushLocal => locals.push(stack.pop().unwrap()),
             Instr::PopLocal(n) => locals.truncate(locals.len() - n),
             Instr::GetLocal(x) => stack.push(locals[locals.len() - 1 - x].clone()),
+
             Instr::NotBool => {
                 let x = stack.pop().unwrap().bool();
                 stack.push(Value::Bool(!x))
@@ -163,11 +164,22 @@ pub fn exec(prog: &Program) -> Option<Value> {
                 let x = stack.pop().unwrap().bool();
                 stack.push(Value::Bool(x && y))
             },
+            Instr::OrBool => {
+                let y = stack.pop().unwrap().bool();
+                let x = stack.pop().unwrap().bool();
+                stack.push(Value::Bool(x || y))
+            },
+            Instr::XorBool => {
+                let y = stack.pop().unwrap().bool();
+                let x = stack.pop().unwrap().bool();
+                stack.push(Value::Bool(x ^ y))
+            },
             Instr::EqBool => {
                 let y = stack.pop().unwrap().bool();
                 let x = stack.pop().unwrap().bool();
                 stack.push(Value::Bool(x == y))
             },
+
             Instr::NegInt => {
                 let x = stack.pop().unwrap().int();
                 stack.push(Value::Int(-x))
@@ -222,6 +234,7 @@ pub fn exec(prog: &Program) -> Option<Value> {
                 let x = stack.pop().unwrap().int();
                 stack.push(Value::Bool(x >= y))
             },
+
             Instr::NegNum => {
                 let x = stack.pop().unwrap().num();
                 stack.push(Value::Num(-x))
@@ -271,6 +284,7 @@ pub fn exec(prog: &Program) -> Option<Value> {
                 let x = stack.pop().unwrap().num();
                 stack.push(Value::Bool(x >= y))
             },
+
             Instr::EqChar => {
                 let y = stack.pop().unwrap().char();
                 let x = stack.pop().unwrap().char();

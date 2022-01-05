@@ -38,6 +38,11 @@ pub enum Intrinsic {
     MakeList(Repr),
 
     NotBool,
+    AndBool,
+    OrBool,
+    XorBool,
+    EqBool,
+    NotEqBool,
 
     NegNat,
     AddNat,
