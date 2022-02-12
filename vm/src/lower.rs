@@ -4,7 +4,7 @@ fn const_to_value(constant: &mir::Const) -> Value {
     match constant {
         mir::Const::Nat(x) => Value::Int(*x as i64),
         mir::Const::Int(x) => Value::Int(*x),
-        mir::Const::Num(x) => Value::Num(*x),
+        mir::Const::Real(x) => Value::Real(*x),
         mir::Const::Char(c) => Value::Char(*c),
         mir::Const::Bool(x) => Value::Bool(*x),
         mir::Const::Str(s) => Value::List(s
@@ -246,20 +246,20 @@ impl Program {
                     LessEqNat | LessEqInt => { self.push(Instr::LessEqInt); },
                     MoreEqNat | MoreEqInt => { self.push(Instr::MoreEqInt); },
 
-                    NegNum => { self.push(Instr::NegNum); },
-                    AddNum => { self.push(Instr::AddNum); },
-                    SubNum => { self.push(Instr::SubNum); },
-                    MulNum => { self.push(Instr::MulNum); },
-                    DivNum => { self.push(Instr::DivNum); },
-                    EqNum => { self.push(Instr::EqNum); },
-                    NotEqNum => {
-                        self.push(Instr::EqNum);
+                    NegReal => { self.push(Instr::NegReal); },
+                    AddReal => { self.push(Instr::AddReal); },
+                    SubReal => { self.push(Instr::SubReal); },
+                    MulReal => { self.push(Instr::MulReal); },
+                    DivReal => { self.push(Instr::DivReal); },
+                    EqReal => { self.push(Instr::EqReal); },
+                    NotEqReal => {
+                        self.push(Instr::EqReal);
                         self.push(Instr::NotBool);
                     },
-                    LessNum => { self.push(Instr::LessNum); },
-                    MoreNum => { self.push(Instr::MoreNum); },
-                    LessEqNum => { self.push(Instr::LessEqNum); },
-                    MoreEqNum => { self.push(Instr::MoreEqNum); },
+                    LessReal => { self.push(Instr::LessReal); },
+                    MoreReal => { self.push(Instr::MoreReal); },
+                    LessEqReal => { self.push(Instr::LessEqReal); },
+                    MoreEqReal => { self.push(Instr::MoreEqReal); },
 
                     EqChar => { self.push(Instr::EqChar); },
                     NotEqChar => {

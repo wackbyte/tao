@@ -4,6 +4,38 @@ use std::collections::VecDeque;
 pub type InferMeta = (Span, TyVar);
 pub type InferNode<T> = Node<T, InferMeta>;
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum NumLitr {
+    Nat,
+    Real,
+}
+
+impl NumLitr {
+    pub fn to_prim(&self) -> Prim {
+        match self {
+            NumLitr::Nat => Prim::Nat,
+            NumLitr::Real => Prim::Real,
+        }
+    }
+
+    pub fn subtype_of(&self, prim: Prim) -> bool {
+        use Prim::*;
+        match self {
+            NumLitr::Nat => matches!(prim, Nat | Int | Real),
+            NumLitr::Real => matches!(prim, Real),
+        }
+    }
+}
+
+impl fmt::Display for NumLitr {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            NumLitr::Nat => write!(f, "{{nat}}"),
+            NumLitr::Real => write!(f, "{{real}}"),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum TyInfo {
     Ref(TyVar),
@@ -50,9 +82,10 @@ pub enum InferError {
     RecursiveAlias(AliasId, TyVar, Span),
     PatternNotSupported(TyVar, SrcNode<ast::BinaryOp>, TyVar, Span),
     AmbiguousClassItem(SrcNode<Ident>, Vec<ClassId>),
+    NonNumeric(TyVar, Span, NumLitr),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum Constraint {
     // (record, field_name, field)
     Access(TyVar, SrcNode<Ident>, TyVar),
@@ -60,6 +93,12 @@ enum Constraint {
     Binary(SrcNode<ast::BinaryOp>, TyVar, TyVar, TyVar),
     Impl(TyVar, ClassId, Span),
     ClassField(TyVar, ClassVar, SrcNode<Ident>, TyVar, Span),
+}
+
+struct LazyLiteral {
+    ty: TyVar,
+    span: Span,
+    num: NumLitr,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
@@ -74,6 +113,7 @@ pub struct Infer<'a> {
     vars: Vec<(Span, TyInfo, Result<(), ()>)>,
     class_vars: Vec<(Span, Option<ClassId>)>,
     constraints: VecDeque<Constraint>,
+    lazy_literals: VecDeque<LazyLiteral>,
     errors: Vec<InferError>,
     self_type: Option<TyVar>,
 }
@@ -86,6 +126,7 @@ impl<'a> Infer<'a> {
             vars: Vec::new(),
             class_vars: Vec::new(),
             constraints: VecDeque::new(),
+            lazy_literals: VecDeque::new(),
             errors: Vec::new(),
             self_type: None,
         };
@@ -245,6 +286,10 @@ impl<'a> Infer<'a> {
         self.class_vars.push((span, None));
         self.constraints.push_back(Constraint::ClassField(ty, class, field_name, field_ty, span));
         class
+    }
+
+    pub fn make_num_litr(&mut self, ty: TyVar, span: Span, num: NumLitr) {
+        self.lazy_literals.push_back(LazyLiteral { ty, span, num });
     }
 
     pub fn emit(&mut self, err: InferError) {
@@ -463,7 +508,7 @@ impl<'a> Infer<'a> {
                 (Not, TyInfo::Prim(Prim::Bool)) => Some(Ok(TyInfo::Prim(Prim::Bool))),
                 (Neg, TyInfo::Prim(Prim::Nat)) => Some(Ok(TyInfo::Prim(Prim::Int))),
                 (Neg, TyInfo::Prim(Prim::Int)) => Some(Ok(TyInfo::Prim(Prim::Int))),
-                (Neg, TyInfo::Prim(Prim::Num)) => Some(Ok(TyInfo::Prim(Prim::Num))),
+                (Neg, TyInfo::Prim(Prim::Real)) => Some(Ok(TyInfo::Prim(Prim::Real))),
                 _ => {
                     self.set_error(output);
                     Some(Err(InferError::InvalidUnaryOp(op.clone(), a)))
@@ -498,8 +543,8 @@ impl<'a> Infer<'a> {
                             ((Add, Nat, Nat), Nat),
                             ((Sub, Nat, Nat), Int),
                             ((Mul, Nat, Nat), Nat),
-                            ((Div, Nat, Nat), Num),
                             ((Rem, Nat, Nat), Nat),
+                            ((Div, Nat, Nat), Real),
                             ((Eq, Nat, Nat), Bool),
                             ((NotEq, Nat, Nat), Bool),
                             ((Less, Nat, Nat), Bool),
@@ -511,7 +556,7 @@ impl<'a> Infer<'a> {
                             ((Add, Int, Int), Int),
                             ((Sub, Int, Int), Int),
                             ((Mul, Int, Int), Int),
-                            ((Div, Int, Int), Num),
+                            ((Div, Int, Int), Real),
                             ((Eq, Int, Int), Bool),
                             ((NotEq, Int, Int), Bool),
                             ((Less, Int, Int), Bool),
@@ -523,7 +568,7 @@ impl<'a> Infer<'a> {
                             ((Add, Int, Nat), Int),
                             ((Sub, Int, Nat), Int),
                             ((Mul, Int, Nat), Int),
-                            ((Div, Int, Nat), Num),
+                            ((Div, Int, Nat), Real),
                             ((Eq, Int, Nat), Bool),
                             ((NotEq, Int, Nat), Bool),
                             ((Less, Int, Nat), Bool),
@@ -531,17 +576,17 @@ impl<'a> Infer<'a> {
                             ((More, Int, Nat), Bool),
                             ((MoreEq, Int, Nat), Bool),
 
-                            // Num
-                            ((Add, Num, Num), Num),
-                            ((Sub, Num, Num), Num),
-                            ((Mul, Num, Num), Num),
-                            ((Div, Num, Num), Num),
-                            ((Eq, Num, Num), Bool),
-                            ((NotEq, Num, Num), Bool),
-                            ((Less, Num, Num), Bool),
-                            ((LessEq, Num, Num), Bool),
-                            ((More, Num, Num), Bool),
-                            ((MoreEq, Num, Num), Bool),
+                            // Real
+                            ((Add, Real, Real), Real),
+                            ((Sub, Real, Real), Real),
+                            ((Mul, Real, Real), Real),
+                            ((Div, Real, Real), Real),
+                            ((Eq, Real, Real), Bool),
+                            ((NotEq, Real, Real), Bool),
+                            ((Less, Real, Real), Bool),
+                            ((LessEq, Real, Real), Bool),
+                            ((More, Real, Real), Bool),
+                            ((MoreEq, Real, Real), Bool),
 
                             // Char
                             ((Eq, Char, Char), Bool),
@@ -572,6 +617,23 @@ impl<'a> Infer<'a> {
                 })),
             Constraint::Impl(ty, obligation, span) => self.resolve_obligation(ty, obligation, span),
             Constraint::ClassField(ty, class, field, field_ty, span) => self.try_resolve_class_from_field(ty, class, field.clone(), field_ty, span),
+        }
+    }
+
+    fn resolve_lazy_literal(&mut self, lazy: LazyLiteral) {
+        if match self.follow_info(lazy.ty) {
+            TyInfo::Unknown(_) => {
+                let num_ty = self.insert(lazy.span, TyInfo::Prim(lazy.num.to_prim()));
+                self.make_eq(lazy.ty, num_ty, self.span(self.follow(lazy.ty)));
+                true
+            },
+            TyInfo::Prim(prim) => lazy.num.subtype_of(prim),
+            _ => false,
+        } {
+            // TODO?
+        } else {
+            self.set_error(lazy.ty);
+            self.errors.push(InferError::NonNumeric(lazy.ty, lazy.span, lazy.num));
         }
     }
 
@@ -744,20 +806,54 @@ impl<'a> Infer<'a> {
     }
 
     fn resolve_constraints(&mut self) {
-        let mut tries = self.constraints.len();
-        while let (Some(c), true) = (self.constraints.pop_front(), tries > 0) {
-            tries -= 1;
-            match self.resolve(c.clone()) {
-                // Constraint resolved
-                Some(res) => {
-                    // Record any errors while resolving the constraint
-                    if let Err(e) = res {
-                        self.errors.push(e);
+        loop {
+            let mut tries = self.constraints.len();
+            while tries > 0 {
+                if let Some(c) = self.constraints.pop_front() {
+                    tries -= 1;
+                    match self.resolve(c.clone()) {
+                        // Constraint resolved
+                        Some(res) => {
+                            // Record any errors while resolving the constraint
+                            if let Err(e) = res {
+                                self.errors.push(e);
+                            }
+                            // A constraint being resolved resets the counter
+                            tries = self.constraints.len();
+                        },
+                        None => self.constraints.push_back(c), // Still unresolved...
                     }
-                    tries = self.constraints.len();
-                },
-                None => self.constraints.push_back(c), // Still unresolved...
+                } else {
+                    break
+                }
             }
+
+            if let Some(lazy) = self.lazy_literals.pop_front() {
+                self.resolve_lazy_literal(lazy);
+            } else {
+                break;
+            }
+        }
+
+        // Generate errors for all remaining constraints
+        for c in std::mem::take(&mut self.constraints) {
+            self.errors.push(match c {
+                Constraint::Access(record, field_name, field) => {
+                    InferError::NoSuchField(record, self.span(record), field_name.clone())
+                },
+                Constraint::Unary(op, a, output) => {
+                    InferError::InvalidUnaryOp(op.clone(), a)
+                },
+                Constraint::Binary(op, a, b, output) => {
+                    InferError::InvalidBinaryOp(op.clone(), a, b)
+                },
+                Constraint::Impl(ty, obligation, span) => {
+                    InferError::TypeDoesNotFulfill(obligation, ty, span, None)
+                },
+                Constraint::ClassField(ty, class, field, field_ty, span) => {
+                    InferError::AmbiguousClassItem(field, Vec::new())
+                },
+            });
         }
     }
 
@@ -791,10 +887,11 @@ impl<'a> Infer<'a> {
                 InferError::NoSuchField(a, record_span, field) => Error::NoSuchField(checked.reify(a), record_span, field),
                 InferError::InvalidUnaryOp(op, a) => Error::InvalidUnaryOp(op, checked.reify(a), checked.infer.span(a)),
                 InferError::InvalidBinaryOp(op, a, b) => Error::InvalidBinaryOp(op, checked.reify(a), checked.infer.span(a), checked.reify(b), checked.infer.span(b)),
-                InferError::TypeDoesNotFulfill(class, ty, span, gen_span) => Error::TypeDoesNotFulfil(class, checked.reify(ty), span, gen_span),
+                InferError::TypeDoesNotFulfill(class, ty, span, gen_span) => Error::TypeDoesNotFulfill(class, checked.reify(ty), span, gen_span),
                 InferError::RecursiveAlias(alias, a, span) => Error::RecursiveAlias(alias, checked.reify(a), span),
                 InferError::PatternNotSupported(lhs, op, rhs, span) => Error::PatternNotSupported(checked.reify(lhs), op, checked.reify(rhs), span),
                 InferError::AmbiguousClassItem(field, candidate_classes) => Error::AmbiguousClassItem(field, candidate_classes),
+                InferError::NonNumeric(ty, span, num_litr) => Error::NonNumeric(checked.reify(ty), span, num_litr),
             })
             .collect();
 

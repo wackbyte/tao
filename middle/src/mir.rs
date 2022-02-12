@@ -15,7 +15,7 @@ pub struct LocalId(usize);
 pub enum Const {
     Nat(u64),
     Int(i64),
-    Num(f64),
+    Real(f64),
     Char(char),
     Bool(bool),
     Str(Intern<String>),
@@ -28,7 +28,7 @@ impl Const {
     pub fn bool(&self) -> bool { if let Const::Bool(x) = self { *x } else { panic!("{:?}", self) } }
     pub fn nat(&self) -> u64 { if let Const::Nat(x) = self { *x } else { panic!("{:?}", self) } }
     pub fn int(&self) -> i64 { if let Const::Int(x) = self { *x } else { panic!("{:?}", self) } }
-    pub fn num(&self) -> f64 { if let Const::Num(x) = self { *x } else { panic!("{:?}", self) } }
+    pub fn real(&self) -> f64 { if let Const::Real(x) = self { *x } else { panic!("{:?}", self) } }
     pub fn char(&self) -> char { if let Const::Char(c) = self { *c } else { panic!("{:?}", self) } }
     pub fn list(&self) -> Vec<Self> { if let Const::List(x) = self { x.clone() } else { panic!("{:?}", self) } }
 }
@@ -69,17 +69,17 @@ pub enum Intrinsic {
     LessEqInt,
     MoreEqInt,
 
-    NegNum,
-    AddNum,
-    SubNum,
-    MulNum,
-    DivNum,
-    EqNum,
-    NotEqNum,
-    LessNum,
-    MoreNum,
-    LessEqNum,
-    MoreEqNum,
+    NegReal,
+    AddReal,
+    SubReal,
+    MulReal,
+    DivReal,
+    EqReal,
+    NotEqReal,
+    LessReal,
+    MoreReal,
+    LessEqReal,
+    MoreEqReal,
 
     EqChar,
     NotEqChar,
@@ -310,17 +310,17 @@ impl Expr {
                     Expr::Intrinsic(AndBool, args) => write!(f, "{} and {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
                     Expr::Intrinsic(OrBool, args) => write!(f, "{} or {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
                     Expr::Intrinsic(XorBool, args) => write!(f, "{} xor {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(NegNat | NegInt | NegNum, args) => write!(f, "-{}", DisplayExpr(&args[0], self.1)),
-                    Expr::Intrinsic(AddNat | AddInt | AddNum, args) => write!(f, "{} + {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(SubNat | SubInt | SubNum, args) => write!(f, "{} - {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(MulNat | MulInt | MulNum, args) => write!(f, "{} * {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(DivNat | DivInt | DivNum, args) => write!(f, "{} / {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(NegNat | NegInt | NegReal, args) => write!(f, "-{}", DisplayExpr(&args[0], self.1)),
+                    Expr::Intrinsic(AddNat | AddInt | AddReal, args) => write!(f, "{} + {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(SubNat | SubInt | SubReal, args) => write!(f, "{} - {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(MulNat | MulInt | MulReal, args) => write!(f, "{} * {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(DivNat | DivInt | DivReal, args) => write!(f, "{} / {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
                     Expr::Intrinsic(RemNat, args) => write!(f, "{} % {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(EqBool | EqNat | EqInt | EqNum | EqChar, args) => write!(f, "{} = {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(LessNat | LessInt | LessNum, args) => write!(f, "{} < {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(MoreNat | MoreInt | MoreNum, args) => write!(f, "{} > {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(MoreEqNat | MoreEqInt | MoreEqNum, args) => write!(f, "{} >= {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
-                    Expr::Intrinsic(LessEqNat | LessEqInt | LessEqNum, args) => write!(f, "{} <= {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(EqBool | EqNat | EqInt | EqReal | EqChar, args) => write!(f, "{} = {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(LessNat | LessInt | LessReal, args) => write!(f, "{} < {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(MoreNat | MoreInt | MoreReal, args) => write!(f, "{} > {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(MoreEqNat | MoreEqInt | MoreEqReal, args) => write!(f, "{} >= {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
+                    Expr::Intrinsic(LessEqNat | LessEqInt | LessEqReal, args) => write!(f, "{} <= {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
                     Expr::Intrinsic(Join(_), args) => write!(f, "{} ++ {}", DisplayExpr(&args[0], self.1), DisplayExpr(&args[1], self.1)),
                     Expr::Match(pred, arms) => {
                         write!(f, "match {} in", DisplayExpr(pred, self.1))?;

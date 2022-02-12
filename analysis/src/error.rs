@@ -13,7 +13,7 @@ pub enum Error {
     InvalidUnaryOp(SrcNode<ast::UnaryOp>, TyId, Span),
     InvalidBinaryOp(SrcNode<ast::BinaryOp>, TyId, Span, TyId, Span),
     // (obligation, type, obligation_origin, generic_definition
-    TypeDoesNotFulfil(ClassId, TyId, Span, Option<Span>),
+    TypeDoesNotFulfill(ClassId, TyId, Span, Option<Span>),
     NoSuchData(SrcNode<Ident>),
     NoSuchCons(SrcNode<Ident>),
     NoSuchClass(SrcNode<Ident>),
@@ -37,6 +37,7 @@ pub enum Error {
     GenericEntryPoint(SrcNode<Ident>, Span, Span),
     InvalidIntrinsic(SrcNode<Ident>),
     Unsupported(Span, &'static str),
+    NonNumeric(TyId, Span, NumLitr),
 }
 
 impl Error {
@@ -76,12 +77,15 @@ impl Error {
                 vec![],
             ),
             Error::Recursive(a, span, part) => (
-                format!("Recursive type {}", display(a).fg(Color::Red)),
+                format!("Self-referencing type {} expands to have infinite size", display(a).fg(Color::Red)),
                 vec![
                     (span, format!("Mentions itself"), Color::Red),
-                    (part, format!("Recursive element is here"), Color::Red),
+                    (part, format!("Self-reference occurs here"), Color::Yellow),
                 ],
-                vec![],
+                vec![
+                    format!("Types expand eagerly and so self-reference results in infinite size"),
+                    format!("If this was intentional, consider using {} instead", "data".fg(Color::Cyan)),
+                ],
             ),
             Error::NoSuchField(a, record_span, field) => (
                 format!("Type {} has no field named {}", display(a).fg(Color::Red), (*field).fg(Color::Red)),
@@ -111,7 +115,10 @@ impl Error {
             ),
             Error::InvalidUnaryOp(op, a, a_span) => (
                 format!("Cannot apply {} to {}", (*op).fg(Color::Red), display(a).fg(Color::Red)),
-                vec![(op.span().union(a_span), format!("Operation {} applied here", (*op).fg(Color::Red)), Color::Red)],
+                vec![
+                    (op.span(), format!("Operation {} applied here", (*op).fg(Color::Red)), Color::Red),
+                    (a_span, format!("{}", display(a).fg(Color::Yellow)), Color::Yellow),
+                ],
                 match ctx.tys.get(a) {
                     Ty::Gen(_, _) => vec![format!(
                         "Consider adding a class constraint like {}",
@@ -122,7 +129,11 @@ impl Error {
             ),
             Error::InvalidBinaryOp(op, a, a_span, b, b_span) => (
                 format!("Invalid operation {} {} {}", display(a).fg(Color::Red), (*op).fg(Color::Red), display(b).fg(Color::Red)),
-                vec![(a_span.union(op.span()).union(b_span), format!("Operation {} applied here", (*op).fg(Color::Red)), Color::Red)],
+                vec![
+                    (op.span(), format!("Operation {} applied here", (*op).fg(Color::Red)), Color::Red),
+                    (a_span, format!("{}", display(a).fg(Color::Yellow)), Color::Yellow),
+                    (b_span, format!("{}", display(b).fg(Color::Yellow)), Color::Yellow),
+                ],
                 match ctx.tys.get(a) {
                     Ty::Gen(_, _) => vec![format!(
                         "Consider adding a class constraint like {}",
@@ -131,8 +142,8 @@ impl Error {
                     _ => vec![],
                 },
             ),
-            Error::TypeDoesNotFulfil(class, ty, span, gen_span) => (
-                format!("Type {} does not fulfil {} obligation", display(ty).fg(Color::Red), (*ctx.classes.get(class).name).fg(Color::Red)),
+            Error::TypeDoesNotFulfill(class, ty, span, gen_span) => (
+                format!("Type {} does not fulfill {} obligation", display(ty).fg(Color::Red), (*ctx.classes.get(class).name).fg(Color::Red)),
                 {
                     let mut labels = vec![
                         (span, format!("Required by the bound here"), Color::Yellow),
@@ -150,7 +161,7 @@ impl Error {
                     }
                     labels
                 },
-                vec![format!("Types must fulfil their class obligations")],
+                vec![format!("Types must fulfill their class obligations")],
             ),
             Error::NoSuchData(a) => (
                 format!("No such type {}", (*a).fg(Color::Red)),
@@ -192,7 +203,7 @@ impl Error {
                 {
                     let alias = ctx.datas.get_alias(alias).unwrap();
                     vec![format!(
-                        "Type aliases expand eagerly. Consider using a data type like {} instead.",
+                        "Type aliases expand eagerly. Consider using a data type like {} instead",
                         format!("data {} = {}", alias.name, display(alias.ty).substitute(ty, |f| write!(f, "{}", alias.name))).fg(Color::Blue),
                     )]
                 },
@@ -328,6 +339,14 @@ impl Error {
                     (span, format!("This is unsupported"), Color::Red),
                 ],
                 vec![],
+            ),
+            Error::NonNumeric(ty, span, num_litr) => (
+                format!("Numeric literal of type {} cannot coerce to type {}", num_litr.fg(Color::Red), display(ty).fg(Color::Red)),
+                vec![
+                    (span, format!("Is not a valid {}", display(ty).fg(Color::Red)), Color::Red),
+                    (ctx.tys.get_span(ty), format!("Coercion to {} is required here", display(ty).fg(Color::Yellow)), Color::Yellow),
+                ],
+                vec![format!("Numeric literals must be valid in the context of their use")],
             ),
         };
 

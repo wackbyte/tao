@@ -20,7 +20,7 @@ data NatWrapper = Nat
 
 data Person = (
 	.name: Str,
-	.age: Num,
+	.age: Real,
 )
 
 # Type alias syntax

@@ -6,8 +6,17 @@ class Neg =
 member Int of Neg =
     => neg = fn x => -x
 
-member Num of Neg =
+member Real of Neg =
     => neg = fn x => -x
+
+# Not
+
+$[lang(not)]
+class Not =
+    => not : Self -> Self
+
+member Bool of Not =
+    => not = fn x => !x
 
 # Add
 
@@ -20,7 +29,7 @@ member Nat of Add =
 member Int of Add =
     => add = fn x, y => x + y
 
-member Num of Add =
+member Real of Add =
     => add = fn x, y => x + y
 
 # Sub
@@ -31,7 +40,7 @@ class Sub =
 member Int of Sub =
     => sub = fn x, y => x - y
 
-member Num of Sub =
+member Real of Sub =
     => sub = fn x, y => x - y
 
 # Mul
@@ -45,7 +54,7 @@ member Nat of Mul =
 member Int of Mul =
     => mul = fn x, y => x * y
 
-member Num of Mul =
+member Real of Mul =
     => mul = fn x, y => x * y
 
 # Div
@@ -53,7 +62,7 @@ member Num of Mul =
 class Div =
     => div : Self -> Self -> Self
 
-member Num of Div =
+member Real of Div =
     => div = fn x, y => x / y
 
 # Rem
@@ -75,7 +84,7 @@ member Nat of Eq =
 member Int of Eq =
     => eq = fn x, y => x = y
 
-member Num of Eq =
+member Real of Eq =
     => eq = fn x, y => x = y
 
 # Ord
@@ -106,7 +115,7 @@ member Int of Ord =
         else
             Equal
 
-member Num of Ord =
+member Real of Ord =
     => cmp = fn x, y =>
         if x < y then
             Less

@@ -14,8 +14,8 @@ member Nat of Default =
 member Int of Default =
     => default = Int.zero
 
-member Num of Default =
-    => default = Num.zero
+member Real of Default =
+    => default = Real.zero
 
 for A < Default, B < Default member (A, B) of Default =
     => default = (A.default, B.default)

@@ -43,7 +43,7 @@ pub enum Instr {
     AddInt, // Int -> Int -> Int
     SubInt, // Int -> Int -> Int
     MulInt, // Int -> Int -> Int
-    DivInt, // Int -> Int -> Num
+    DivInt, // Int -> Int -> Real
     RemInt, // Int -> Int -> Int
     EqInt, // Int -> Int -> Bool
     LessInt, // Int -> Int -> Bool
@@ -51,16 +51,16 @@ pub enum Instr {
     LessEqInt, // Int -> Int -> Bool
     MoreEqInt, // Int -> Int -> Bool
 
-    NegNum, // Num -> Num
-    AddNum, // Num -> Num -> Num
-    SubNum, // Num -> Num -> Num
-    MulNum, // Num -> Num -> Num
-    DivNum, // Num -> Num -> Num
-    EqNum, // Num -> Num -> Bool
-    LessNum, // Num -> Num -> Bool
-    MoreNum, // Num -> Num -> Bool
-    LessEqNum, // Num -> Num -> Bool
-    MoreEqNum, // Num -> Num -> Bool
+    NegReal, // Real -> Real
+    AddReal, // Real -> Real -> Real
+    SubReal, // Real -> Real -> Real
+    MulReal, // Real -> Real-> Real
+    DivReal, // Real -> Real -> Real
+    EqReal, // Real -> Real -> Bool
+    LessReal, // Real -> Real -> Bool
+    MoreReal, // Real -> Real -> Bool
+    LessEqReal, // Real -> Real -> Bool
+    MoreEqReal, // Real -> Real -> Bool
 
     EqChar, // Char -> Char -> Bool
 }
@@ -145,7 +145,7 @@ impl Program {
                 Instr::GetLocal(_) => 1,
                 Instr::NotBool
                 | Instr::NegInt
-                | Instr::NegNum => 0,
+                | Instr::NegReal => 0,
                 Instr::AndBool
                 | Instr::OrBool
                 | Instr::XorBool
@@ -160,15 +160,15 @@ impl Program {
                 | Instr::MoreInt
                 | Instr::LessEqInt
                 | Instr::MoreEqInt
-                | Instr::AddNum
-                | Instr::SubNum
-                | Instr::MulNum
-                | Instr::DivNum
-                | Instr::EqNum
-                | Instr::LessNum
-                | Instr::MoreNum
-                | Instr::LessEqNum
-                | Instr::MoreEqNum
+                | Instr::AddReal
+                | Instr::SubReal
+                | Instr::MulReal
+                | Instr::DivReal
+                | Instr::EqReal
+                | Instr::LessReal
+                | Instr::MoreReal
+                | Instr::LessEqReal
+                | Instr::MoreEqReal
                 | Instr::EqChar => -1,
             };
 
@@ -216,16 +216,16 @@ impl Program {
                 Instr::LessEqInt => format!("int.less_eq"),
                 Instr::MoreEqInt => format!("int.more_eq"),
 
-                Instr::NegNum => format!("num.neg"),
-                Instr::AddNum => format!("num.add"),
-                Instr::SubNum => format!("num.sub"),
-                Instr::MulNum => format!("num.mul"),
-                Instr::DivNum => format!("num.div"),
-                Instr::EqNum => format!("num.eq"),
-                Instr::LessNum => format!("num.less"),
-                Instr::MoreNum => format!("num.more"),
-                Instr::LessEqNum => format!("num.less_eq"),
-                Instr::MoreEqNum => format!("num.more_eq"),
+                Instr::NegReal => format!("real.neg"),
+                Instr::AddReal => format!("real.add"),
+                Instr::SubReal => format!("real.sub"),
+                Instr::MulReal => format!("real.mul"),
+                Instr::DivReal => format!("real.div"),
+                Instr::EqReal => format!("real.eq"),
+                Instr::LessReal => format!("real.less"),
+                Instr::MoreReal => format!("real.more"),
+                Instr::LessEqReal => format!("real.less_eq"),
+                Instr::MoreEqReal => format!("real.more_eq"),
 
                 Instr::EqChar => format!("char.eq"),
             };

@@ -13,8 +13,8 @@ member Nat of Debug =
 member Int of Debug =
     => debug = fn _ => "Int"
 
-member Num of Debug =
-    => debug = fn _ => "Num"
+member Real of Debug =
+    => debug = fn _ => "Real"
 
 member Bool of Debug =
     => debug = fn
